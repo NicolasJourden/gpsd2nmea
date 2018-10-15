@@ -23,16 +23,16 @@ int main(int argc, char* argv[])
   char * name = "TEST";
 
   static const struct option long_opts[] = {
-    {"help (this message)", no_argument, NULL, '?' },
-    {"debug", no_argument, NULL, 'd' },
-    {"delay between each message in second", required_argument, NULL, 'D' },
-    {"gpsd server address (default: 127.0.0.1)", optional_argument, NULL, 'H' },
-    {"gpsd server port (default: 2947)", optional_argument, NULL, 'P' },
-    {"target server address (default: 192.168.0.1)", optional_argument, NULL, 't' },
-    {"target server port (default: 1234)", optional_argument, NULL, 'p' },
-    {"tll target name / mmsi ship name (default: TEST)", optional_argument, NULL, 'N' },
-    {"id (default 1)", optional_argument, NULL, 'i' },
-    {"ais output, without tll output (default)", no_argument, NULL, 'a' }
+    {"Help (this message).", no_argument, NULL, '?' },
+    {"Debug.", no_argument, NULL, 'd' },
+    {"Delay between each message in second.", required_argument, NULL, 'D' },
+    {"gpsd server address (default: 127.0.0.1).", optional_argument, NULL, 'H' },
+    {"gpsd server port (default: 2947).", optional_argument, NULL, 'P' },
+    {"Target UDP server address (default: 192.168.0.1).", optional_argument, NULL, 't' },
+    {"Target UDP server port (default: 1234).", optional_argument, NULL, 'p' },
+    {"TLL target name / AIS ship name (default: TEST).", optional_argument, NULL, 'N' },
+    {"Id / MMSI (default 1).", optional_argument, NULL, 'i' },
+    {"AIS output (value of 1 or 19 for message type), without TLL is outputed (defaukt).", no_argument, NULL, 'a' }
   };
   int long_index = 0;
 
@@ -133,11 +133,14 @@ init:
     gps_stream(&gpsdata, WATCH_DISABLE, NULL);
     gps_close(&gpsdata);
 
-    // Prepare the tll:
-    if (ais) 
-    {
-      len = gpsd2nmea_setAISStr(buffer, &gpsdata, id, name);
-    } else {
+    // Prepare the string:
+    if (ais == 1) {
+      len = gpsd2nmea_setAISStr_msg1(buffer, &gpsdata, id);
+    }
+    else if (ais == 19) {
+      len = gpsd2nmea_setAISStr_msg19(buffer, &gpsdata, id, name);
+    }
+    else {
       len = gpsd2nmea_setTLLStr(buffer, &gpsdata, id, name);
     }
     //if (debug) printf("%s\n", buffer);

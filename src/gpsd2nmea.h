@@ -44,9 +44,11 @@ int gpsd2nmea_getCRC(const char * pBuffer, int len);
 
 int gpsd2nmea_sendUDP(const char * pBuffer, int len, char * pAddress, int pPort);
 
-int gpsd2nmea_setTLLStr(char * pBuffer, struct gps_data_t * gpsdata, int pId, char * pName);
+int gpsd2nmea_setTLLStr(char * pBuffer, struct gps_data_t * gpsdata, unsigned int pId, char * pName);
 
-int gpsd2nmea_setAISStr(char * pBuffer, struct gps_data_t * gpsdata, int pId, const char * pName);
+int gpsd2nmea_setAISStr_msg19(char * pBuffer, struct gps_data_t * gpsdata, unsigned int pId, const char * pName);
+
+int gpsd2nmea_setAISStr_msg1(char * pBuffer, struct gps_data_t * gpsdata, unsigned int pId);
 
 unsigned int gpsd2nmea_getDegree(double pDegree);
 double gpsd2nmea_getMinutes(double pDegree);
@@ -54,13 +56,11 @@ double gpsd2nmea_getMinutes(double pDegree);
 char * gpsd2nmea_getSignLat(double pDegree);
 char * gpsd2nmea_getSignLon(double pDegree);
 
-// Type 19: Extended Class B CS Position Report
-// Common Navigation Block
 typedef struct {
+    // Common elements:
     uint8_t type;
     uint8_t repeat;
     uint32_t mmsi;
-    uint8_t reserved;
     uint16_t speed;
     uint8_t accuracy;
     int32_t longitude;
@@ -68,6 +68,11 @@ typedef struct {
     uint16_t course;
     uint16_t heading;
     uint8_t second;
+    uint8_t spare;
+    uint8_t raim;
+
+    // Message type 19:
+    uint8_t reserved;
     uint8_t regional;
     uint8_t shipname[20];
     uint8_t shiptype;
@@ -76,12 +81,17 @@ typedef struct {
     uint16_t to_port;
     uint16_t to_starboard;
     uint8_t epfd;
-    uint8_t raim;
     uint8_t dte;
     uint8_t assigned;
-    uint8_t spare;
-} t_gpsd2nmea_ais_msg19;
-#define t_gpsd2nmea_ais_msg19_size	(sizeof(t_gpsd2nmea_ais_msg19))
+
+    // Message type 1:
+    uint8_t navigation_status;
+    int8_t rate_of_turn;
+    uint8_t maneuver;
+    uint32_t radio;
+} t_gpsd2nmea_ais_msg;
+#define t_gpsd2nmea_ais_msg_size	(sizeof(t_gpsd2nmea_ais_msg))
 #define t_gpsd2nmea_endoded_msg19_size	(312/6)
+#define t_gpsd2nmea_endoded_msg1_size	(168/6)
 
 #endif

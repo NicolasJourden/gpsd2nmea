@@ -40,7 +40,7 @@ char * gpsd2nmea_getSignLon(double pDegree)
   }
 }
 
-int gpsd2nmea_setTLLStr(char * pBuffer, struct gps_data_t * gpsdata, int pId, char * pName)
+int gpsd2nmea_setTLLStr(char * pBuffer, struct gps_data_t * gpsdata, unsigned int pId, char * pName)
 {
   memset(pBuffer, 0, 1024);
   time_t gps_date = gpsdata->fix.time;

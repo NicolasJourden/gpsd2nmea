@@ -24,7 +24,7 @@ int main ( int argc, char * *argv ) {
   gpsdata1.fix.time = 7;
   gpsdata1.fix.track = 235.0; // 
   gpsdata1.fix.speed = 10.08311; // m/s
-  gpsd2nmea_setAISStr(buffer1, &gpsdata1, mmsi1, name1);
+  gpsd2nmea_setAISStr_msg19(buffer1, &gpsdata1, mmsi1, name1);
   printf ("%s\n", buffer1);
 //  assert (strcmp(buffer, "!AIVDM,1,1,,A,14eG;o@034o8sd<L9i:a;WF>062D,0*7D\r\n") == 0x00);
 
@@ -39,7 +39,7 @@ int main ( int argc, char * *argv ) {
   gpsdata2.fix.track = 180.0;
   gpsdata2.fix.speed = 0.01;
 
-  gpsd2nmea_setAISStr(buffer2, &gpsdata2, mmsi2, name2);
+  gpsd2nmea_setAISStr_msg19(buffer2, &gpsdata2, mmsi2, name2);
   printf ("%s\n", buffer2);
 //  assert (strcmp(buffer, "!AIVDM,1,1,,B,177KQJ5000G?tO`K>RA1wUbN0TKH,0*5C\r\n") == 0x00);
 

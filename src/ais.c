@@ -84,7 +84,7 @@ static void ais_binary_to_ascii(unsigned char *bits, unsigned int len)
   return;
 }
 
-unsigned int ais_binary_encode(t_gpsd2nmea_ais_msg19 * ais, unsigned char *bits)
+unsigned int ais_binary_encode_msg19(t_gpsd2nmea_ais_msg * ais, unsigned char *bits)
 {
   unsigned int len = 0;
   ais_addbits(bits,   0,  6, (uint64_t)ais->type);
@@ -116,11 +116,11 @@ unsigned int ais_binary_encode(t_gpsd2nmea_ais_msg19 * ais, unsigned char *bits)
   return len;
 }
 
-int gpsd2nmea_setAISStr(char * pBuffer, struct gps_data_t * gpsdata, int pMMSI, const char * pShipName)
+int gpsd2nmea_setAISStr_msg19(char * pBuffer, struct gps_data_t * gpsdata, unsigned int pMMSI, const char * pShipName)
 {
   unsigned char ais_encoded[t_gpsd2nmea_endoded_msg19_size+1];
-  t_gpsd2nmea_ais_msg19 ais;
-  memset(&ais, 0x00, t_gpsd2nmea_ais_msg19_size);
+  t_gpsd2nmea_ais_msg ais;
+  memset(&ais, 0x00, t_gpsd2nmea_ais_msg_size);
   memset(ais_encoded, 0x00, t_gpsd2nmea_endoded_msg19_size+1);
   memset(pBuffer, 0x00, GPSD2NMEA_BUFFER_SIZE);
 
@@ -157,9 +157,79 @@ int gpsd2nmea_setAISStr(char * pBuffer, struct gps_data_t * gpsdata, int pMMSI, 
   ais.dte = 1;
   ais.assigned = 0;
   ais.spare = 0;  
-  
+
   // Encode the message:
-  unsigned int val = ais_binary_encode(&ais, ais_encoded);
+  unsigned int val = ais_binary_encode_msg19(&ais, ais_encoded);
+
+  // Make the sentence:
+  sprintf(pBuffer, GPSD2NMEA_AIS_SENTENCE, (char *) ais_encoded);
+
+  // Append CRC:
+  int length = strlen(pBuffer);
+  int CRC = gpsd2nmea_getCRC(pBuffer, length);
+  sprintf(pBuffer+length, "%02X\r\n", CRC);
+  
+  return strlen(pBuffer);
+}
+
+unsigned int ais_binary_encode_msg1(t_gpsd2nmea_ais_msg * ais, unsigned char *bits)
+{
+  unsigned int len = 0;
+  ais_addbits(bits,   0,  6, (uint64_t)ais->type);
+  ais_addbits(bits,   6,  2, (uint64_t)ais->repeat);
+  ais_addbits(bits,   8, 30, (uint64_t)ais->mmsi);
+  ais_addbits(bits,  38,  4, (uint64_t)ais->navigation_status);
+  ais_addbits(bits,  42,  8, (uint64_t)ais->rate_of_turn);
+  ais_addbits(bits,  50, 10, (uint64_t)ais->speed);
+  ais_addbits(bits,  60,  1, (uint64_t)ais->accuracy);
+  ais_addbits(bits,  61, 28, (uint64_t)ais->longitude);
+  ais_addbits(bits,  89, 27, (uint64_t)ais->latitude);
+  ais_addbits(bits, 116, 12, (uint64_t)ais->course);
+  ais_addbits(bits, 128,  9, (uint64_t)ais->heading);
+  ais_addbits(bits, 137,  6, (uint64_t)ais->second);
+  ais_addbits(bits, 143,  2, (uint64_t)ais->maneuver);
+  ais_addbits(bits, 145,  3, (uint64_t)ais->spare);
+  ais_addbits(bits, 148,  1, (uint64_t)ais->raim);
+  ais_addbits(bits, 149, 19, (uint64_t)ais->radio);
+  len = 149 + 19;
+
+  ais_binary_to_ascii(bits, len);
+  return len;
+}
+
+int gpsd2nmea_setAISStr_msg1(char * pBuffer, struct gps_data_t * gpsdata, unsigned int pMMSI)
+{
+  unsigned char ais_encoded[t_gpsd2nmea_endoded_msg1_size+1];
+  t_gpsd2nmea_ais_msg ais;
+  memset(&ais, 0x00, t_gpsd2nmea_ais_msg_size);
+  memset(ais_encoded, 0x00, t_gpsd2nmea_endoded_msg1_size+1);
+  memset(pBuffer, 0x00, GPSD2NMEA_BUFFER_SIZE);
+
+  // Set time: seconds:
+  struct tm date;
+  time_t gps_date = gpsdata->fix.time;
+  memcpy(&date, localtime(&gps_date), sizeof(struct tm));
+
+  // Put data:
+  ais.type = 1; // 6
+  ais.repeat = 2; // 2
+  ais.mmsi = (unsigned) pMMSI;
+  ais.navigation_status = 0; // 4
+  ais.rate_of_turn = 0;
+  ais.speed = (uint16_t) ((gpsdata->fix.speed * 1.94384) * 10);
+  ais.accuracy = 0;
+  ais.longitude = (uint32_t) (gpsdata->fix.longitude * 600000.00);
+  ais.latitude =  (uint32_t) (gpsdata->fix.latitude * 600000.00);
+  ais.course = (uint16_t) gpsdata->fix.track / 0.1;
+  ais.heading =  511; // (uint16_t) gpsdata->fix.track;
+  ais.second = date.tm_sec;
+  ais.maneuver = 1;
+  ais.spare = 0x3;
+  ais.raim = 0;
+  ais.radio = 0x0;
+
+  // Encode the message:
+  unsigned int val = ais_binary_encode_msg1(&ais, ais_encoded);
 
   // Make the sentence:
   sprintf(pBuffer, GPSD2NMEA_AIS_SENTENCE, (char *) ais_encoded);
