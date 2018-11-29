@@ -36,7 +36,7 @@
 #define GPSD2NMEA_AIS_SENTENCE		"!AIVDM,1,1,,A,%s,0*"
 #define GPSD2NMEA_POLL_DELAY		(60*1000)
 #define GPSD2NMEA_BUFFER_SIZE		2048
-#define GPSD2NMEA_USAGE			"h?dD:H:P:t:p:N:i:a"
+#define GPSD2NMEA_USAGE			"h?d:D:H:P:t:p:N:i:a:"
 
 void gpsd2nmea_displayUsage(const struct option * pLong_opts, int pSize);
 

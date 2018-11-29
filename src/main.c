@@ -24,15 +24,15 @@ int main(int argc, char* argv[])
 
   static const struct option long_opts[] = {
     {"Help (this message).", no_argument, NULL, '?' },
-    {"Debug.", no_argument, NULL, 'd' },
-    {"Delay between each message in second.", required_argument, NULL, 'D' },
+    {"Debug / verbose.", no_argument, NULL, 'd' },
+    {"Delay between each message in seconds.", required_argument, NULL, 'D' },
     {"gpsd server address (default: 127.0.0.1).", optional_argument, NULL, 'H' },
     {"gpsd server port (default: 2947).", optional_argument, NULL, 'P' },
     {"Target UDP server address (default: 192.168.0.1).", optional_argument, NULL, 't' },
     {"Target UDP server port (default: 1234).", optional_argument, NULL, 'p' },
     {"TLL target name / AIS ship name (default: TEST).", optional_argument, NULL, 'N' },
     {"Id / MMSI (default 1).", optional_argument, NULL, 'i' },
-    {"AIS output (value of 1 or 19 for message type), without TLL is outputed (defaukt).", no_argument, NULL, 'a' }
+    {"AIS output (value of 1 or 19 for message type), without TLL is outputed (default).", no_argument, NULL, 'a' }
   };
   int long_index = 0;
 
@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
     switch (c)
     {
       case 'd':
-        debug = 1;
+        debug = (unsigned int) atoi(optarg);
         break;
       case 'D':
         delay = (unsigned int) atoi(optarg);
@@ -100,7 +100,10 @@ init:
 
     // Conect to GPS:
     ret = gps_open(gpsd_server_address, gpsd_server_port, &gpsdata);
-    if (ret && debug) printf ("Cannot connect to %s:%s\n", gpsd_server_address, gpsd_server_port);
+    if (ret) {
+      if (debug > 1) printf ("Cannot connect to %s:%s\n", gpsd_server_address, gpsd_server_port);
+      return 1;
+    }
 
     // Ask for a stream:
     gps_stream(&gpsdata, WATCH_ENABLE | WATCH_JSON | WATCH_NEWSTYLE, NULL);
@@ -123,8 +126,11 @@ init:
         goto init;
       }
 
-      if (gpsdata.set & LATLON_SET) {
-        if (debug) printf ("Lat %f / lon  %f / Time %f.\n", gpsdata.fix.latitude, gpsdata.fix.longitude, gpsdata.fix.time);
+      if ((gpsdata.set & LATLON_SET) && (gpsdata.set & TIME_SET)) {
+        if (debug > 1) {
+          printf ("Lat %f / lon  %f / Time %f.\n",
+            gpsdata.fix.latitude, gpsdata.fix.longitude, gpsdata.fix.time);
+        }
         break;
       }
     }
@@ -143,10 +149,10 @@ init:
     else {
       len = gpsd2nmea_setTLLStr(buffer, &gpsdata, id, name);
     }
-    //if (debug) printf("%s\n", buffer);
+    if (debug > 0) printf("%s\n\n", buffer);
 
     // Send via UDP:
-    if (debug) printf("Sending to %s:%d - %s", tll_server_address, tll_server_port, buffer);
+    if (debug > 1) printf("Sending to %s:%d - %s", tll_server_address, tll_server_port, buffer);
     gpsd2nmea_sendUDP(buffer, len+1, tll_server_address, tll_server_port);
 
     // Pause:
